@@ -1,0 +1,20 @@
+[project]
+name = "busca-vagas"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.16.4",
+  "apscheduler>=3.11.0",
+  "beautifulsoup4>=4.13.0",
+  "email-validator>=2.2.0",
+  "fastapi>=0.118.0",
+  "uvicorn[standard]>=0.37.0",
+  "pydantic-settings>=2.10.0",
+  "httpx>=0.28.0",
+  "playwright>=1.55.0",
+  "pytest>=8.4.0",
+  "sqlalchemy>=2.0.43"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

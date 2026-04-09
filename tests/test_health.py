@@ -1,0 +1,21 @@
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+
+
+def test_healthcheck_returns_ok():
+    client = TestClient(create_app())
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_recent_jobs_endpoint_exists():
+    client = TestClient(create_app())
+
+    response = client.get("/admin/jobs/recent")
+
+    assert response.status_code == 200
+    assert response.json() == {"items": []}
