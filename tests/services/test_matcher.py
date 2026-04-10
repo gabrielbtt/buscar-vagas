@@ -1,11 +1,11 @@
 from app.core.profile import build_default_profile
 from app.db.models import JobListing
-from app.db.repositories import should_notify_for_job
+from app.db.repositories import mark_jobs_as_notified, should_notify_for_job
 from app.schemas.job import NormalizedJob
 from app.services.matcher import MatchedJob, match_jobs
 
 
-def test_should_notify_only_once_for_same_fingerprint(session):
+def test_should_notify_until_job_is_marked_notified(session):
     matched_job = MatchedJob(
         job=NormalizedJob(
             source_name="company",
@@ -28,6 +28,10 @@ def test_should_notify_only_once_for_same_fingerprint(session):
     assert saved.title == "Estagio em Automacao Industrial"
     assert saved.score == 0.91
     assert saved.notified is False
+
+    assert should_notify_for_job(session, matched_job) is True
+
+    mark_jobs_as_notified(session, [matched_job.fingerprint])
 
     assert should_notify_for_job(session, matched_job) is False
 

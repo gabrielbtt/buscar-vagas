@@ -1,0 +1,47 @@
+:root {
+  --bg: #f4efe6;
+  --panel: #fffaf1;
+  --ink: #1f1a17;
+  --accent: #8a5a2b;
+  --line: #d8c5ad;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, serif;
+  background: linear-gradient(180deg, #efe4d2 0%, var(--bg) 100%);
+  color: var(--ink);
+}
+
+.dashboard {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.hero,
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 10px 12px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+}

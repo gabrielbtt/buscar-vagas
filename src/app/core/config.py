@@ -1,7 +1,16 @@
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import EmailStr
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.services.settings_store import DEFAULT_FILE_SETTINGS, FileSettingsStore
+
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
+KILO_DIR = ROOT_DIR / ".kilo"
+PROJECT_CONTEXT_PATH = KILO_DIR / "project-context.md"
+SETTINGS_STORE_PATH = KILO_DIR / "ui-settings.json"
 
 
 class Settings(BaseSettings):
@@ -9,7 +18,18 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "sqlite:///./jobs.db"
     search_interval_minutes: int = 180
+    immediate_alert_min_score: float = DEFAULT_FILE_SETTINGS["immediate_alert_min_score"]
     digest_min_score: float = 0.6
+    target_locations: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["target_locations"])
+    required_keywords: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["required_keywords"])
+    preferred_keywords: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["preferred_keywords"])
+    blocked_keywords: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["blocked_keywords"])
+    allowed_contract_terms: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["allowed_contract_terms"])
+    company_page_source_enabled: bool = False
+    company_page_source_url: str = ""
+    browser_page_source_enabled: bool = False
+    browser_page_source_url: str = ""
+    preferred_execution_window: str = DEFAULT_FILE_SETTINGS["preferred_execution_window"]
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_username: str = ""
@@ -22,5 +42,27 @@ class Settings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> Settings:
-    return Settings()
+def _get_cached_settings() -> Settings:
+    store = FileSettingsStore(SETTINGS_STORE_PATH)
+    stored_settings = store.load()
+    settings = Settings()
+    overrides = {}
+    for key, value in stored_settings.items():
+        if key not in Settings.model_fields:
+            continue
+
+        field = Settings.model_fields[key]
+        try:
+            overrides[key] = TypeAdapter(field.annotation).validate_python(value)
+        except ValidationError:
+            continue
+    return settings.model_copy(update=overrides)
+
+
+def get_settings(*, refresh: bool = False) -> Settings:
+    if refresh:
+        return _get_cached_settings.__wrapped__()
+    return _get_cached_settings()
+
+
+get_settings.cache_clear = _get_cached_settings.cache_clear

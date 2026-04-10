@@ -22,7 +22,7 @@ def build_default_profile() -> JobProfile:
             "comandos eletricos",
         ),
         blocked_keywords=("n8n", "marketing", "vendas", "telemarketing"),
-        allowed_contract_terms=("estagio", "estagiario", "trainee"),
+        allowed_contract_terms=("estagio", "estagiario", "internship", "trainee"),
         target_locations=("belo horizonte", "contagem", "betim", "nova lima"),
         allow_remote_terms=("remoto", "remote", "home office", "100% remoto"),
     )

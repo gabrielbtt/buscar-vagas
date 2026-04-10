@@ -1,0 +1,18 @@
+{
+  "search_interval_minutes": 30,
+  "immediate_alert_min_score": 0.92,
+  "target_locations": [
+    "belo horizonte",
+    "contagem",
+    "remoto"
+  ],
+  "required_keywords": [],
+  "preferred_keywords": [],
+  "blocked_keywords": [],
+  "allowed_contract_terms": [],
+  "company_page_source_enabled": false,
+  "company_page_source_url": "",
+  "browser_page_source_enabled": false,
+  "browser_page_source_url": "",
+  "preferred_execution_window": "comercial"
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Busca de Vagas</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <main class="dashboard">
+    <section class="hero">
+      <h1>Busca de Vagas</h1>
+      <p>Status atual: {{ data.latest_status }}</p>
+      <form action="/ui/run-now" method="post">
+        <button type="submit">Buscar agora</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>Configuracoes</h2>
+      <form action="/ui/settings" method="post">
+        <label>Frequencia (minutos)
+          <input name="search_interval_minutes" value="{{ data.search_interval_minutes }}">
+        </label>
+        <label>Score para alerta imediato
+          <input name="immediate_alert_min_score" value="{{ data.immediate_alert_min_score }}">
+        </label>
+        <label>Locais alvo
+          <input name="target_locations" value="{{ data.target_locations | join(', ') }}">
+        </label>
+        <label>Keywords obrigatorias
+          <input name="required_keywords" value="{{ data.required_keywords | join(', ') }}">
+        </label>
+        <label>Keywords preferenciais
+          <input name="preferred_keywords" value="{{ data.preferred_keywords | join(', ') }}">
+        </label>
+        <label>Keywords bloqueadas
+          <input name="blocked_keywords" value="{{ data.blocked_keywords | join(', ') }}">
+        </label>
+        <label>Tipos de contrato
+          <input name="allowed_contract_terms" value="{{ data.allowed_contract_terms | join(', ') }}">
+        </label>
+        <label>Janela preferida
+          <input name="preferred_execution_window" value="{{ data.preferred_execution_window }}">
+        </label>
+        <label>Fonte company-page habilitada
+          <input type="checkbox" name="company_page_source_enabled" {% if data.company_page_source_enabled %}checked{% endif %}>
+        </label>
+        <label>URL company-page
+          <input name="company_page_source_url" value="{{ data.company_page_source_url }}">
+        </label>
+        <button type="submit">Salvar configuracoes</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>Resumo do perfil</h2>
+      <p>Locais: {{ data.target_locations | join(', ') }}</p>
+      <p>Obrigatorias: {{ data.required_keywords | join(', ') }}</p>
+      <p>Preferenciais: {{ data.preferred_keywords | join(', ') }}</p>
+      <p>Bloqueadas: {{ data.blocked_keywords | join(', ') }}</p>
+    </section>
+    <section class="panel">
+      <h2>Fontes habilitadas</h2>
+      <ul>
+        {% for source in data.enabled_sources %}
+        <li>{{ source }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Vagas recentes</h2>
+      {% if data.recent_jobs %}
+      <ul>
+        {% for job in data.recent_jobs %}
+        <li>{{ job.title }} - {{ job.company }} - {{ job.source_name }} - notificado: {{ job.notified }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Nenhuma vaga recente.</p>
+      {% endif %}
+    </section>
+  </main>
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>

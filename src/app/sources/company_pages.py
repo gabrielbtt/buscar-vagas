@@ -22,3 +22,31 @@ def parse_company_jobs_html(html: str, source_name: str) -> list[NormalizedJob]:
             )
         )
     return jobs
+
+
+class CompanyPageSource:
+    def __init__(self, source_name: str, page_url: str, client_factory, browser_fetcher=None):
+        self.source_name = source_name
+        self.page_url = page_url
+        self.client_factory = client_factory
+        self.browser_fetcher = browser_fetcher
+
+    async def fetch_jobs(self) -> list[NormalizedJob]:
+        client = self.client_factory()
+        try:
+            try:
+                response = await client.get(self.page_url)
+                response.raise_for_status()
+                jobs = parse_company_jobs_html(response.text, source_name=self.source_name)
+                if jobs or self.browser_fetcher is None:
+                    return jobs
+            except Exception:
+                if self.browser_fetcher is None:
+                    raise
+
+            browser_page = await self.browser_fetcher.fetch_page(self.page_url)
+            return parse_company_jobs_html(browser_page.html, source_name=self.source_name)
+        finally:
+            close = getattr(client, "aclose", None)
+            if close is not None:
+                await close()
