@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from app.core.config import PROJECT_CONTEXT_PATH, get_settings
 from app.db import models  # noqa: F401
 from app.db.base import Base, SessionLocal, engine
-from app.db.repositories import mark_jobs_as_notified, persist_new_matches, should_notify_for_job
+from app.db.repositories import mark_jobs_as_notified, persist_new_matches, should_notify_for_job, upsert_fetched_jobs
 from app.services.context_tracker import ensure_project_context
 from app.services.matcher import match_jobs
 from app.services.notifier import build_digest_email, send_digest_email
@@ -48,9 +48,12 @@ def run_collection_cycle(collector) -> RunCycleResult:
         all_matched.extend(matched)
 
     if not all_matched:
+        with SessionLocal() as session:
+            upsert_fetched_jobs(session, jobs)
         return RunCycleResult(len(jobs), 0, 0, 0)
 
     with SessionLocal() as session:
+        upsert_fetched_jobs(session, jobs)
         new_items = persist_new_matches(session, all_matched)
         if not new_items:
             return RunCycleResult(

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     company_page_source_url: str = ""
     browser_page_source_enabled: bool = False
     browser_page_source_url: str = ""
+    global_sources: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["global_sources"])
     preferred_execution_window: str = DEFAULT_FILE_SETTINGS["preferred_execution_window"]
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587

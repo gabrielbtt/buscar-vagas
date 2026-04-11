@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -12,6 +12,9 @@ class JobProfile:
     allowed_contract_terms: tuple[str, ...]
     target_locations: tuple[str, ...]
     allow_remote_terms: tuple[str, ...]
+    use_gupy: bool = True
+    use_vagas: bool = True
+    custom_sources: tuple[str, ...] = field(default_factory=tuple)
 
 
 def build_initial_profiles() -> list[JobProfile]:
@@ -34,6 +37,9 @@ def build_initial_profiles() -> list[JobProfile]:
             allowed_contract_terms=("estagio", "estagiario", "internship", "trainee"),
             target_locations=("belo horizonte", "contagem", "betim", "nova lima", "sabara", "santa luzia", "ribeirao das neves", "vespasiano"),
             allow_remote_terms=("remoto", "remote", "home office", "100% remoto"),
+            use_gupy=True,
+            use_vagas=True,
+            custom_sources=()
         ),
         JobProfile(
             id="default",
@@ -45,5 +51,8 @@ def build_initial_profiles() -> list[JobProfile]:
             allowed_contract_terms=("clt", "pj", "estagio"),
             target_locations=("remoto",),
             allow_remote_terms=("remoto", "remote", "home office"),
+            use_gupy=True,
+            use_vagas=True,
+            custom_sources=()
         )
     ]

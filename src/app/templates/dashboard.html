@@ -5,61 +5,80 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Busca de Vagas - Premium</title>
   <link rel="stylesheet" href="/static/dashboard.css">
+  <style>
+    .profile-edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .profile-edit-grid label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .profile-edit-grid input, .profile-edit-grid textarea {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      margin-top: 4px;
+      font-family: inherit;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .add-profile-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    .source-tag {
+      background: #e9ecef;
+      color: #495057;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 8px;
+      margin-top: 8px;
+      border: 1px solid #ced4da;
+    }
+  </style>
 </head>
 <body>
   <main class="dashboard">
     <section class="hero">
       <h1>Busca de Vagas</h1>
       <p><strong>Status atual:</strong> {{ data.latest_status }}</p>
-      <div style="display: flex; gap: 12px; margin-top: 16px;">
-        <form action="/ui/run-now" method="post">
-          <button type="submit">Buscar agora</button>
-        </form>
+      
+      <div style="margin-top: 12px;">
+        <strong style="font-size: 0.9rem; color: #666;">Fontes Ativas:</strong><br>
+        {% for source in data.enabled_sources %}
+          <span class="source-tag">{{ source }}</span>
+        {% endfor %}
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button id="run-now-btn">Buscar agora</button>
+        <div id="run-result" style="margin-left: 10px; align-self: center; font-weight: bold;"></div>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>Perfis de Busca</h2>
-      <form action="/ui/settings" method="post">
-        {% for profile in data.profiles %}
-        <div class="job-card" style="margin-bottom: 12px; padding: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0;">{{ profile.name }}</h3>
-            <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
-              <input type="checkbox" name="profile_{{ profile.id }}_active" {% if profile.active %}checked{% endif %}>
-              Ativo
-            </label>
-          </div>
-          <div style="margin-top: 8px; font-size: 0.95rem; color: #666;">
-            <strong>Locais:</strong> {{ profile.target_locations | join(', ') }}<br>
-            <strong>Keywords:</strong> {{ profile.required_keywords | join(', ') }}
-          </div>
-        </div>
-        {% endfor %}
-
-        <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--line);">
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-          <label>Frequência (minutos)
-            <input name="search_interval_minutes" value="{{ data.search_interval_minutes }}">
-          </label>
-          <label>Score Alerta Imediato
-            <input name="immediate_alert_min_score" value="{{ data.immediate_alert_min_score }}">
-          </label>
-        </div>
-
-        <div style="margin-top: 20px;">
-          <label>Fonte Gupy (via Playwright)
-            <input type="checkbox" name="browser_page_source_enabled" {% if data.browser_page_source_enabled %}checked{% endif %}>
-          </label>
-        </div>
-
-        <button type="submit" style="margin-top: 24px; width: 100%;">Salvar Todas as Configurações</button>
-      </form>
-    </section>
-
-    <section class="panel">
-      <h2>Vagas Recentes</h2>
+    <section class="panel" style="border-left: 5px solid var(--accent);">
+      <h2>Vagas Recentes (Encontradas)</h2>
       {% if data.recent_jobs %}
       <div class="job-list">
         {% for job in data.recent_jobs %}
@@ -77,10 +96,169 @@
         {% endfor %}
       </div>
       {% else %}
-      <p>Nenhuma vaga recente encontrada.</p>
+      <p>Nenhuma vaga recente encontrada. Clique em "Buscar agora" para iniciar uma coleta.</p>
       {% endif %}
     </section>
+
+    <section class="panel">
+      <h2>Configurações Gerais</h2>
+      <form action="/ui/settings" method="post" id="settings-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <label>Frequência (minutos)
+            <input name="search_interval_minutes" value="{{ data.search_interval_minutes }}" style="width: 100%; padding: 8px;">
+          </label>
+          <label>Score Alerta Imediato
+            <input name="immediate_alert_min_score" value="{{ data.immediate_alert_min_score }}" style="width: 100%; padding: 8px;">
+          </label>
+        </div>
+
+        <div style="margin-bottom: 20px; display: flex; gap: 20px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="browser_page_source_enabled" {% if data.browser_page_source_enabled %}checked{% endif %}>
+            Fonte Gupy Ativada (Global)
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="company_page_source_enabled" {% if data.company_page_source_enabled %}checked{% endif %}>
+            Fonte Páginas de Empresa
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <label>URL da fonte Gupy/Browser
+            <input name="browser_page_source_url" value="{{ data.browser_page_source_url }}" placeholder="https://example.com/jobs" style="width: 100%; padding: 8px;">
+          </label>
+          <label>URL da página de empresa
+            <input name="company_page_source_url" value="{{ data.company_page_source_url }}" placeholder="https://empresa.com/carreiras" style="width: 100%; padding: 8px;">
+          </label>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: bold; margin-bottom: 6px;">Fontes Globais Padrao</label>
+          <textarea name="global_sources" style="width: 100%; min-height: 130px; padding: 8px;" placeholder="Uma URL por linha">{{ data.global_sources | join('\n') }}</textarea>
+          <div style="font-size: 0.85rem; color: #666; margin-top: 6px;">Essas fontes sao buscadas globalmente para todo o site.</div>
+        </div>
+
+        <h2>Perfis de Busca</h2>
+        <div id="profiles-container">
+          {% for profile in data.profiles %}
+          <div class="job-card profile-section" style="margin-bottom: 20px; padding: 20px; position: relative;" data-profile-id="{{ profile.id }}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <input name="profile_{{ profile.id }}_name" value="{{ profile.name }}" style="font-size: 1.1rem; font-weight: bold; border: none; border-bottom: 1px solid #ccc; width: 70%;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-size: 0.9rem;">
+                  <input type="checkbox" name="profile_{{ profile.id }}_active" {% if profile.active %}checked{% endif %}>
+                  Ativo
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-size: 0.9rem; color: #dc3545;">
+                  <input type="checkbox" name="profile_{{ profile.id }}_delete">
+                  Apagar
+                </label>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 20px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold;">
+                <input type="checkbox" name="profile_{{ profile.id }}_use_gupy" {% if profile.use_gupy %}checked{% endif %}>
+                Buscar na Gupy
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold;">
+                <input type="checkbox" name="profile_{{ profile.id }}_use_vagas" {% if profile.use_vagas %}checked{% endif %}>
+                Buscar no Vagas.com
+              </label>
+            </div>
+
+            <div class="profile-edit-grid">
+              <label>Keywords Obrigatórias (CSV)
+                <input name="profile_{{ profile.id }}_required_keywords" value="{{ profile.required_keywords | join(', ') }}">
+              </label>
+              <label>Keywords Preferenciais (CSV)
+                <input name="profile_{{ profile.id }}_preferred_keywords" value="{{ profile.preferred_keywords | join(', ') }}">
+              </label>
+              <label>Keywords Bloqueadas (CSV)
+                <input name="profile_{{ profile.id }}_blocked_keywords" value="{{ profile.blocked_keywords | join(', ') }}">
+              </label>
+              <label>Locais Alvo (CSV)
+                <input name="profile_{{ profile.id }}_target_locations" value="{{ profile.target_locations | join(', ') }}">
+              </label>
+              <label>Contratos Permitidos (CSV)
+                <input name="profile_{{ profile.id }}_allowed_contract_terms" value="{{ profile.allowed_contract_terms | join(', ') }}">
+              </label>
+              <label>Termos Remotos (CSV)
+                <input name="profile_{{ profile.id }}_allow_remote_terms" value="{{ profile.allow_remote_terms | join(', ') }}">
+              </label>
+            </div>
+            
+            <div style="margin-top: 15px;">
+              <label style="font-size: 0.85rem; font-weight: bold; display: block;">Fontes Manuais (URLs separadas por vírgula)
+                <textarea name="profile_{{ profile.id }}_custom_sources" style="width: 100%; min-height: 60px; margin-top: 4px;">{{ profile.custom_sources | join(', ') }}</textarea>
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <button type="button" class="add-profile-btn" id="add-profile-btn">+ Adicionar Novo Perfil</button>
+        
+        <button type="submit" style="margin-top: 24px; width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+          Salvar Todas as Configurações
+        </button>
+      </form>
+    </section>
   </main>
+
+  <template id="profile-template">
+    <div class="job-card profile-section" style="margin-bottom: 20px; padding: 20px; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <input name="profile_NEWID_name" placeholder="Nome do Perfil (ex: Engenharia BH)" style="font-size: 1.1rem; font-weight: bold; border: none; border-bottom: 1px solid #ccc; width: 70%;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 5px; margin: 0; font-size: 0.9rem;">
+            <input type="checkbox" name="profile_NEWID_active" checked>
+            Ativo
+          </label>
+          <button type="button" class="delete-btn" onclick="this.closest('.profile-section').remove()">Remover</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 20px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold;">
+          <input type="checkbox" name="profile_NEWID_use_gupy" checked>
+          Buscar na Gupy
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold;">
+          <input type="checkbox" name="profile_NEWID_use_vagas" checked>
+          Buscar no Vagas.com
+        </label>
+      </div>
+
+      <div class="profile-edit-grid">
+        <label>Keywords Obrigatórias (CSV)
+          <input name="profile_NEWID_required_keywords" placeholder="ex: engenharia eletrica, clp">
+        </label>
+        <label>Keywords Preferenciais (CSV)
+          <input name="profile_NEWID_preferred_keywords" placeholder="ex: python, automacao">
+        </label>
+        <label>Keywords Bloqueadas (CSV)
+          <input name="profile_NEWID_blocked_keywords" placeholder="ex: vendas, marketing">
+        </label>
+        <label>Locais Alvo (CSV)
+          <input name="profile_NEWID_target_locations" placeholder="ex: belo horizonte, remoto">
+        </label>
+        <label>Contratos Permitidos (CSV)
+          <input name="profile_NEWID_allowed_contract_terms" placeholder="ex: estagio, trainee">
+        </label>
+        <label>Termos Remotos (CSV)
+          <input name="profile_NEWID_allow_remote_terms" value="remoto, remote, home office">
+        </label>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <label style="font-size: 0.85rem; font-weight: bold; display: block;">Fontes Manuais (URLs separadas por vírgula)
+          <textarea name="profile_NEWID_custom_sources" style="width: 100%; min-height: 60px; margin-top: 4px;" placeholder="https://site-da-empresa.com.br/vagas"></textarea>
+        </label>
+      </div>
+    </div>
+  </template>
+
   <script src="/static/dashboard.js"></script>
 </body>
 </html>

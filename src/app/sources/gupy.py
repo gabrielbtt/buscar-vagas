@@ -35,8 +35,10 @@ class GupySource(JobSource):
         jobs = parse_job_elements(
             html, 
             source_name=f"Gupy ({self._profile_name})" if self._profile_name else "Gupy",
-            item_selector="[data-testid='job-list-item'], a[href*='/job/']",
-            title_selector="h3, [class*='JobTitle']",
-            location_selector="[class*='JobLocation'], span:contains(' - ')"
+            item_selector="[data-testid='job-list-item'], div[class*='JobCard']",
+            title_selector="h3, [class*='JobTitle'], p[class*='JobCardTitle']",
+            location_selector="[class*='JobLocation'], p[class*='JobCardLocation']",
+            company_selector="p[class*='JobCardCompanyName']",
+            url_selector="a[href*='/job/']"
         )
         return jobs

@@ -91,6 +91,14 @@ def test_multi_source_collector_adds_browser_page_source_when_enabled(monkeypatc
                 "browser_fetcher": "browser-fetcher",
             },
         ),
+        (
+            "browser",
+            {
+                "source_name": "browser-page",
+                "page_url": "https://example.com/dynamic/jobs",
+                "browser_fetcher": "browser-fetcher",
+            },
+        ),
     ]
 
 
@@ -120,3 +128,44 @@ def test_multi_source_collector_skips_browser_page_source_without_mcp_url(monkey
     MultiSourceCollector.build_from_settings(settings, client_factory=lambda: "client")
 
     assert [kind for kind, _ in created_sources] == ["company"]
+
+
+def test_multi_source_collector_adds_global_sources(monkeypatch):
+    created_sources = []
+
+    class FakeCompanySource:
+        def __init__(self, **kwargs):
+            created_sources.append(kwargs)
+
+    settings = SimpleNamespace(
+        profiles=[],
+        global_sources=[
+            "https://www.infojobs.com.br/",
+            "https://www.catho.com.br/vagas/",
+        ],
+        company_page_source_enabled=False,
+        company_page_source_url="",
+        browser_page_source_enabled=False,
+        browser_page_source_url="",
+        playwright_mcp_url="http://localhost:8931",
+    )
+
+    monkeypatch.setattr("app.services.collector.CompanyPageSource", FakeCompanySource)
+    monkeypatch.setattr("app.services.collector.build_browser_fetcher", lambda base_url: "browser-fetcher")
+
+    MultiSourceCollector.build_from_settings(settings, client_factory=lambda: "client")
+
+    assert created_sources == [
+        {
+            "source_name": "global-1",
+            "page_url": "https://www.infojobs.com.br/",
+            "client_factory": created_sources[0]["client_factory"],
+            "browser_fetcher": "browser-fetcher",
+        },
+        {
+            "source_name": "global-2",
+            "page_url": "https://www.catho.com.br/vagas/",
+            "client_factory": created_sources[1]["client_factory"],
+            "browser_fetcher": "browser-fetcher",
+        },
+    ]

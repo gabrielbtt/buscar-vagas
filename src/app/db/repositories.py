@@ -2,8 +2,50 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
+from app.core.dedupe import build_job_fingerprint
 from app.db.models import JobListing
+from app.schemas.job import NormalizedJob
 from app.services.matcher import MatchedJob
+
+
+def upsert_fetched_jobs(session, jobs: list[NormalizedJob]) -> None:
+    now = datetime.now(timezone.utc)
+    for job in jobs:
+        fingerprint = build_job_fingerprint(job.company, job.title, str(job.url))
+        existing = session.scalar(select(JobListing).where(JobListing.fingerprint == fingerprint))
+        if existing:
+            existing.source_name = job.source_name
+            existing.external_id = job.external_id
+            existing.title = job.title
+            existing.company = job.company
+            existing.location = job.location
+            existing.work_model = job.work_model
+            existing.employment_type = job.employment_type
+            existing.url = str(job.url)
+            existing.description_text = job.description_text
+            existing.last_seen_at = now
+            continue
+
+        session.add(
+            JobListing(
+                fingerprint=fingerprint,
+                source_name=job.source_name,
+                external_id=job.external_id,
+                title=job.title,
+                company=job.company,
+                location=job.location,
+                work_model=job.work_model,
+                employment_type=job.employment_type,
+                url=str(job.url),
+                description_text=job.description_text,
+                score=0.0,
+                first_seen_at=now,
+                last_seen_at=now,
+                notified=False,
+            )
+        )
+
+    session.commit()
 
 
 def should_notify_for_job(session, matched_job: MatchedJob) -> bool:
