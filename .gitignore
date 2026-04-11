@@ -5,3 +5,4 @@ __pycache__/
 *.log
 *.db
 src/*.egg-info/
+.worktrees/
