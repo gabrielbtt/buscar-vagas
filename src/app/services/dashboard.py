@@ -11,14 +11,13 @@ class DashboardData:
     latest_status: str
     search_interval_minutes: int
     immediate_alert_min_score: float
-    target_locations: list[str]
-    required_keywords: list[str]
-    preferred_keywords: list[str]
-    blocked_keywords: list[str]
-    allowed_contract_terms: list[str]
+    profiles: list[dict]
     enabled_sources: list[str]
     company_page_source_enabled: bool
     company_page_source_url: str
+    browser_page_source_enabled: bool
+    browser_page_source_url: str
+    global_sources: list[str]
     preferred_execution_window: str
     recent_jobs: list[dict]
 
@@ -29,17 +28,26 @@ def build_dashboard_data() -> DashboardData:
         latest_status=_read_latest_status(),
         search_interval_minutes=settings.search_interval_minutes,
         immediate_alert_min_score=settings.immediate_alert_min_score,
-        target_locations=list(settings.target_locations),
-        required_keywords=list(settings.required_keywords),
-        preferred_keywords=list(settings.preferred_keywords),
-        blocked_keywords=list(settings.blocked_keywords),
-        allowed_contract_terms=list(settings.allowed_contract_terms),
+        profiles=[_to_profile_dict(p) for p in settings.profiles],
         enabled_sources=_enabled_sources(settings),
         company_page_source_enabled=settings.company_page_source_enabled,
         company_page_source_url=settings.company_page_source_url,
+        browser_page_source_enabled=settings.browser_page_source_enabled,
+        browser_page_source_url=settings.browser_page_source_url,
+        global_sources=list(getattr(settings, "global_sources", ())),
         preferred_execution_window=settings.preferred_execution_window,
         recent_jobs=_recent_jobs(),
     )
+
+
+def _to_profile_dict(profile) -> dict:
+    return {
+        "id": profile.id,
+        "name": profile.name,
+        "active": profile.active,
+        "required_keywords": list(profile.required_keywords),
+        "custom_sources": list(getattr(profile, "custom_sources", ())),
+    }
 
 
 def _read_latest_status() -> str:
@@ -62,7 +70,9 @@ def _read_latest_status() -> str:
 def _enabled_sources(settings) -> list[str]:
     sources = []
     if settings.company_page_source_enabled and settings.company_page_source_url:
-        sources.append(f"company-page: {settings.company_page_source_url}")
+        sources.append(f"Empresa: {settings.company_page_source_url}")
+    if settings.browser_page_source_enabled and settings.browser_page_source_url:
+        sources.append(f"Browser: {settings.browser_page_source_url}")
     return sources or ["Nenhuma fonte habilitada"]
 
 
@@ -77,6 +87,7 @@ def _recent_jobs() -> list[dict]:
                 "score": job.score,
                 "notified": job.notified,
                 "source_name": job.source_name,
+                "url": job.url,
             }
             for job in list_recent_jobs(session)
         ]

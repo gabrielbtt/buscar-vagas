@@ -14,6 +14,7 @@ DEFAULT_FILE_SETTINGS = {
     "company_page_source_url": "",
     "browser_page_source_enabled": False,
     "browser_page_source_url": "",
+    "global_sources": [],
     "preferred_execution_window": "comercial",
 }
 
@@ -23,15 +24,15 @@ class FileSettingsStore:
         self.path = Path(path)
 
     def load(self) -> dict:
-        stored_settings = self._load_existing()
+        stored_settings = _normalize_payload(self._load_existing())
         merged_settings = dict(DEFAULT_FILE_SETTINGS)
         merged_settings.update(stored_settings)
         return merged_settings
 
     def save(self, settings: dict) -> Path:
         payload = dict(DEFAULT_FILE_SETTINGS)
-        payload.update(self._load_existing())
-        payload.update(settings)
+        payload.update(_normalize_payload(self._load_existing()))
+        payload.update(_normalize_payload(settings))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         _write_text_atomically(self.path, json.dumps(payload, indent=2) + "\n")
         return self.path
@@ -56,3 +57,38 @@ def _write_text_atomically(path: Path, content: str) -> None:
     finally:
         if temp_path.exists():
             temp_path.unlink()
+
+
+def _normalize_string_list(values: object) -> list[str]:
+    if not isinstance(values, list):
+        return []
+
+    items = []
+    seen = set()
+    for value in values:
+        if not isinstance(value, str):
+            continue
+        item = value.strip()
+        if not item:
+            continue
+        key = item.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(item)
+    return items
+
+
+def _normalize_payload(payload: dict) -> dict:
+    normalized = dict(payload)
+    for key in (
+        "global_sources",
+        "target_locations",
+        "required_keywords",
+        "preferred_keywords",
+        "blocked_keywords",
+        "allowed_contract_terms",
+    ):
+        if key in normalized:
+            normalized[key] = _normalize_string_list(normalized[key])
+    return normalized

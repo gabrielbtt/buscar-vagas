@@ -250,3 +250,49 @@ def test_file_settings_store_save_keeps_existing_file_when_write_fails(tmp_path,
         store.save({"search_interval_minutes": 45})
 
     assert settings_path.read_text(encoding="utf-8") == original_content
+
+
+def test_file_settings_store_load_normalizes_duplicate_global_sources(tmp_path):
+    settings_path = tmp_path / "settings.json"
+    settings_path.write_text(
+        json.dumps(
+            {
+                "global_sources": [
+                    "https://A.com/jobs",
+                    "https://a.com/jobs ",
+                    "https://b.com/jobs",
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    store = FileSettingsStore(settings_path)
+
+    loaded = store.load()
+
+    assert loaded["global_sources"] == [
+        "https://A.com/jobs",
+        "https://b.com/jobs",
+    ]
+
+
+def test_file_settings_store_save_keeps_legacy_urls_while_replacing_explicit_lists(tmp_path):
+    settings_path = tmp_path / "settings.json"
+    settings_path.write_text(
+        json.dumps(
+            {
+                "company_page_source_url": "https://legacy.example/company",
+                "browser_page_source_url": "https://legacy.example/browser",
+                "global_sources": ["https://old.example/jobs"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    store = FileSettingsStore(settings_path)
+
+    store.save({"global_sources": ["https://new.example/jobs", "https://new.example/jobs "]})
+    persisted = json.loads(settings_path.read_text(encoding="utf-8"))
+
+    assert persisted["company_page_source_url"] == "https://legacy.example/company"
+    assert persisted["browser_page_source_url"] == "https://legacy.example/browser"
+    assert persisted["global_sources"] == ["https://new.example/jobs"]
