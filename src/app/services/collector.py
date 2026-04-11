@@ -1,6 +1,7 @@
 from app.schemas.job import NormalizedJob
 from app.sources.browser_pages import BrowserPageSource
 from app.sources.company_pages import CompanyPageSource
+from app.sources.gupy import GupySource
 from app.utils.browser import build_browser_fetcher
 
 
@@ -20,9 +21,32 @@ class MultiSourceCollector:
     def build_from_settings(cls, settings, client_factory):
         sources = []
         browser_fetcher = None
-        if getattr(settings, "playwright_mcp_url", ""):
-            browser_fetcher = build_browser_fetcher(settings.playwright_mcp_url)
+        playwright_url = getattr(settings, "playwright_mcp_url", "")
+        if playwright_url:
+            browser_fetcher = build_browser_fetcher(playwright_url)
 
+        # Se houver perfis configurados, cria fontes para cada perfil ativo
+        profiles = getattr(settings, "profiles", [])
+        for profile in profiles:
+            if not getattr(profile, "active", False):
+                continue
+
+            # Para cada perfil ativo, podemos adicionar fontes específicas ou genéricas.
+            # No caso da Gupy, podemos gerar uma URL de busca baseada no nome do perfil ou keywords.
+            search_query = "+".join(profile.required_keywords).replace(" ", "+")
+            gupy_search_url = f"https://portal.gupy.io/job-search/term={search_query}"
+            
+            if browser_fetcher:
+                sources.append(
+                    GupySource(
+                        source_name=f"gupy-{profile.id}",
+                        page_url=gupy_search_url,
+                        browser_fetcher=browser_fetcher,
+                        profile_name=profile.name
+                    )
+                )
+
+        # Fontes legadas/gerais (se ativadas)
         if getattr(settings, "company_page_source_enabled", False) and getattr(settings, "company_page_source_url", ""):
             sources.append(
                 CompanyPageSource(
@@ -32,18 +56,15 @@ class MultiSourceCollector:
                     browser_fetcher=browser_fetcher,
                 )
             )
-        if browser_fetcher and getattr(settings, "browser_page_source_enabled", False) and getattr(settings, "browser_page_source_url", ""):
-            sources.append(
-                BrowserPageSource(
-                    source_name="browser-page",
-                    page_url=settings.browser_page_source_url,
-                    browser_fetcher=browser_fetcher,
-                )
-            )
+        
         return cls(sources)
 
     async def fetch_all(self) -> list[NormalizedJob]:
         jobs: list[NormalizedJob] = []
         for source in self._sources:
-            jobs.extend(await source.fetch_jobs())
+            try:
+                jobs.extend(await source.fetch_jobs())
+            except Exception as e:
+                # Logar erro sem interromper as outras fontes
+                print(f"Erro ao buscar na fonte {source.source_name}: {e}")
         return jobs

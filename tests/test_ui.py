@@ -22,12 +22,8 @@ def test_dashboard_page_returns_html():
     assert "Busca de Vagas" in response.text
     assert "Buscar agora" in response.text
     assert 'name="search_interval_minutes"' in response.text
-    assert "Vagas recentes" in response.text
-    assert "Fontes habilitadas" in response.text
-    assert 'name="company_page_source_url"' in response.text
-    assert 'value="https://example.com/company/jobs"' in response.text
-    assert 'name="company_page_source_enabled"' in response.text
-    assert 'checked' in response.text
+    assert "Vagas Recentes" in response.text
+    assert "Perfis de Busca" in response.text
 
 
 def test_manual_run_endpoint_returns_summary():

@@ -14,5 +14,59 @@
   "company_page_source_url": "",
   "browser_page_source_enabled": false,
   "browser_page_source_url": "",
-  "preferred_execution_window": "comercial"
+  "preferred_execution_window": "comercial",
+  "profiles": [
+    {
+      "id": "eng-eletrica-bh",
+      "name": "Engenharia El\u00e9trica (BH/Est\u00e1gio/Trainee)",
+      "active": true,
+      "required_keywords": [
+        "engenharia eletrica",
+        "projetos eletricos",
+        "automacao"
+      ],
+      "preferred_keywords": [
+        "clp",
+        "ihm",
+        "automacao industrial",
+        "plc",
+        "hmi"
+      ],
+      "blocked_keywords": [
+        "n8n",
+        "marketing",
+        "vendas"
+      ],
+      "allowed_contract_terms": [
+        "estagio",
+        "estagiario",
+        "trainee"
+      ],
+      "target_locations": [
+        "belo horizonte",
+        "contagem",
+        "betim",
+        "nova lima"
+      ]
+    },
+    {
+      "id": "default",
+      "name": "Perfil Padr\u00e3o (Geral)",
+      "active": false,
+      "required_keywords": [
+        "desenvolvedor"
+      ],
+      "preferred_keywords": [
+        "python"
+      ],
+      "blocked_keywords": [],
+      "allowed_contract_terms": [
+        "clt",
+        "pj"
+      ],
+      "target_locations": [
+        "remoto"
+      ]
+    }
+  ]
 }

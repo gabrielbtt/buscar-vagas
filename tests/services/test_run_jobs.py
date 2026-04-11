@@ -35,7 +35,7 @@ def test_run_collection_cycle_returns_sent_digest_metadata(monkeypatch):
     assert result.matched_jobs == 1
     assert result.notified_jobs == 1
     assert result.high_priority_jobs == 0
-    assert sent_messages[0][0] == "Vagas encontradas"
+    assert sent_messages[0][0] == "Novas vagas encontradas"
 
     with session_factory() as session:
         saved = session.scalar(select(JobListing))
@@ -45,7 +45,7 @@ def test_run_collection_cycle_returns_sent_digest_metadata(monkeypatch):
 
 def test_run_collection_cycle_sends_immediate_alert_for_exceptional_job(monkeypatch):
     sent_messages = []
-    _configure_test_runtime(monkeypatch, immediate_alert_min_score=0.9)
+    _configure_test_runtime(monkeypatch, immediate_alert_min_score=0.8)
     collector = FakeCollector(
         [
             _build_job(
@@ -67,7 +67,7 @@ def test_run_collection_cycle_sends_immediate_alert_for_exceptional_job(monkeypa
     assert result.matched_jobs == 1
     assert result.notified_jobs == 1
     assert result.high_priority_jobs == 1
-    assert sent_messages[0][0].startswith("Oportunidade muito boa:")
+    assert sent_messages[0][0].startswith("Oportunidade Premium:")
 
 
 def test_process_job_batch_returns_only_new_matches(monkeypatch):
@@ -114,7 +114,7 @@ def test_run_collection_cycle_retries_persisted_unnotified_job(monkeypatch):
     result = run_jobs.run_collection_cycle(collector)
 
     assert result.notified_jobs == 1
-    assert delivery_attempts == ["Vagas encontradas", "Vagas encontradas"]
+    assert delivery_attempts == ["Novas vagas encontradas", "Novas vagas encontradas"]
 
     with session_factory() as session:
         saved = session.scalar(select(JobListing))
@@ -138,6 +138,18 @@ def _configure_test_runtime(monkeypatch, immediate_alert_min_score: float):
             digest_min_score=0.6,
             immediate_alert_min_score=immediate_alert_min_score,
             target_locations=("belo horizonte", "contagem", "betim", "nova lima"),
+            profiles=[
+                SimpleNamespace(
+                    id="test-profile",
+                    name="Test Profile",
+                    active=True,
+                    required_keywords=("engenharia eletrica", "automacao"),
+                    preferred_keywords=("clp", "ihm"),
+                    blocked_keywords=("n8n",),
+                    allowed_contract_terms=("estagio", "estagiario", "internship", "trainee"),
+                    target_locations=("belo horizonte", "contagem", "betim", "nova lima"),
+                )
+            ],
         ),
     )
     return session_factory

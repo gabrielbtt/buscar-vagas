@@ -1,4 +1,4 @@
-from app.core.profile import build_default_profile
+from app.core.profile import build_initial_profiles
 from app.db.models import JobListing
 from app.db.repositories import mark_jobs_as_notified, should_notify_for_job
 from app.schemas.job import NormalizedJob
@@ -37,7 +37,7 @@ def test_should_notify_until_job_is_marked_notified(session):
 
 
 def test_match_jobs_returns_only_relevant_jobs():
-    profile = build_default_profile()
+    profile = build_initial_profiles()[0]
     jobs = [
         NormalizedJob(
             source_name="a",

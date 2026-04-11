@@ -14,6 +14,7 @@ def test_multi_source_collector_passes_browser_fetcher_to_company_page_source(mo
             captured["browser_fetcher"] = browser_fetcher
 
     settings = SimpleNamespace(
+        profiles=[],
         company_page_source_enabled=True,
         company_page_source_url="https://example.com/company/jobs",
         playwright_mcp_url="http://localhost:8931",
@@ -36,6 +37,10 @@ def test_multi_source_collector_passes_browser_fetcher_to_company_page_source(mo
 def test_multi_source_collector_adds_browser_page_source_when_enabled(monkeypatch):
     created_sources = []
 
+    class FakeGupySource:
+        def __init__(self, **kwargs):
+            created_sources.append(("gupy", kwargs))
+
     class FakeCompanySource:
         def __init__(self, **kwargs):
             created_sources.append(("company", kwargs))
@@ -44,7 +49,15 @@ def test_multi_source_collector_adds_browser_page_source_when_enabled(monkeypatc
         def __init__(self, **kwargs):
             created_sources.append(("browser", kwargs))
 
+    profile = SimpleNamespace(
+        id=1,
+        name="Backend",
+        active=True,
+        required_keywords=["python", "fastapi"]
+    )
+
     settings = SimpleNamespace(
+        profiles=[profile],
         company_page_source_enabled=True,
         company_page_source_url="https://example.com/company/jobs",
         browser_page_source_enabled=True,
@@ -52,6 +65,7 @@ def test_multi_source_collector_adds_browser_page_source_when_enabled(monkeypatc
         playwright_mcp_url="http://localhost:8931",
     )
 
+    monkeypatch.setattr("app.services.collector.GupySource", FakeGupySource)
     monkeypatch.setattr("app.services.collector.CompanyPageSource", FakeCompanySource)
     monkeypatch.setattr("app.services.collector.BrowserPageSource", FakeBrowserSource)
     monkeypatch.setattr("app.services.collector.build_browser_fetcher", lambda base_url: "browser-fetcher")
@@ -60,19 +74,20 @@ def test_multi_source_collector_adds_browser_page_source_when_enabled(monkeypatc
 
     assert created_sources == [
         (
+            "gupy",
+            {
+                "source_name": "gupy-1",
+                "page_url": "https://portal.gupy.io/job-search/term=python+fastapi",
+                "browser_fetcher": "browser-fetcher",
+                "profile_name": "Backend",
+            },
+        ),
+        (
             "company",
             {
                 "source_name": "company-page",
                 "page_url": "https://example.com/company/jobs",
-                "client_factory": created_sources[0][1]["client_factory"],
-                "browser_fetcher": "browser-fetcher",
-            },
-        ),
-        (
-            "browser",
-            {
-                "source_name": "browser-page",
-                "page_url": "https://example.com/dynamic/jobs",
+                "client_factory": created_sources[1][1]["client_factory"],
                 "browser_fetcher": "browser-fetcher",
             },
         ),
@@ -91,6 +106,7 @@ def test_multi_source_collector_skips_browser_page_source_without_mcp_url(monkey
             created_sources.append(("browser", kwargs))
 
     settings = SimpleNamespace(
+        profiles=[],
         company_page_source_enabled=True,
         company_page_source_url="https://example.com/company/jobs",
         browser_page_source_enabled=True,

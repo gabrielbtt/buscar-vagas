@@ -3,79 +3,81 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Busca de Vagas</title>
+  <title>Busca de Vagas - Premium</title>
   <link rel="stylesheet" href="/static/dashboard.css">
 </head>
 <body>
   <main class="dashboard">
     <section class="hero">
       <h1>Busca de Vagas</h1>
-      <p>Status atual: {{ data.latest_status }}</p>
-      <form action="/ui/run-now" method="post">
-        <button type="submit">Buscar agora</button>
-      </form>
+      <p><strong>Status atual:</strong> {{ data.latest_status }}</p>
+      <div style="display: flex; gap: 12px; margin-top: 16px;">
+        <form action="/ui/run-now" method="post">
+          <button type="submit">Buscar agora</button>
+        </form>
+      </div>
     </section>
+
     <section class="panel">
-      <h2>Configuracoes</h2>
+      <h2>Perfis de Busca</h2>
       <form action="/ui/settings" method="post">
-        <label>Frequencia (minutos)
-          <input name="search_interval_minutes" value="{{ data.search_interval_minutes }}">
-        </label>
-        <label>Score para alerta imediato
-          <input name="immediate_alert_min_score" value="{{ data.immediate_alert_min_score }}">
-        </label>
-        <label>Locais alvo
-          <input name="target_locations" value="{{ data.target_locations | join(', ') }}">
-        </label>
-        <label>Keywords obrigatorias
-          <input name="required_keywords" value="{{ data.required_keywords | join(', ') }}">
-        </label>
-        <label>Keywords preferenciais
-          <input name="preferred_keywords" value="{{ data.preferred_keywords | join(', ') }}">
-        </label>
-        <label>Keywords bloqueadas
-          <input name="blocked_keywords" value="{{ data.blocked_keywords | join(', ') }}">
-        </label>
-        <label>Tipos de contrato
-          <input name="allowed_contract_terms" value="{{ data.allowed_contract_terms | join(', ') }}">
-        </label>
-        <label>Janela preferida
-          <input name="preferred_execution_window" value="{{ data.preferred_execution_window }}">
-        </label>
-        <label>Fonte company-page habilitada
-          <input type="checkbox" name="company_page_source_enabled" {% if data.company_page_source_enabled %}checked{% endif %}>
-        </label>
-        <label>URL company-page
-          <input name="company_page_source_url" value="{{ data.company_page_source_url }}">
-        </label>
-        <button type="submit">Salvar configuracoes</button>
+        {% for profile in data.profiles %}
+        <div class="job-card" style="margin-bottom: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">{{ profile.name }}</h3>
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <input type="checkbox" name="profile_{{ profile.id }}_active" {% if profile.active %}checked{% endif %}>
+              Ativo
+            </label>
+          </div>
+          <div style="margin-top: 8px; font-size: 0.95rem; color: #666;">
+            <strong>Locais:</strong> {{ profile.target_locations | join(', ') }}<br>
+            <strong>Keywords:</strong> {{ profile.required_keywords | join(', ') }}
+          </div>
+        </div>
+        {% endfor %}
+
+        <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--line);">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <label>Frequência (minutos)
+            <input name="search_interval_minutes" value="{{ data.search_interval_minutes }}">
+          </label>
+          <label>Score Alerta Imediato
+            <input name="immediate_alert_min_score" value="{{ data.immediate_alert_min_score }}">
+          </label>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label>Fonte Gupy (via Playwright)
+            <input type="checkbox" name="browser_page_source_enabled" {% if data.browser_page_source_enabled %}checked{% endif %}>
+          </label>
+        </div>
+
+        <button type="submit" style="margin-top: 24px; width: 100%;">Salvar Todas as Configurações</button>
       </form>
     </section>
+
     <section class="panel">
-      <h2>Resumo do perfil</h2>
-      <p>Locais: {{ data.target_locations | join(', ') }}</p>
-      <p>Obrigatorias: {{ data.required_keywords | join(', ') }}</p>
-      <p>Preferenciais: {{ data.preferred_keywords | join(', ') }}</p>
-      <p>Bloqueadas: {{ data.blocked_keywords | join(', ') }}</p>
-    </section>
-    <section class="panel">
-      <h2>Fontes habilitadas</h2>
-      <ul>
-        {% for source in data.enabled_sources %}
-        <li>{{ source }}</li>
-        {% endfor %}
-      </ul>
-    </section>
-    <section class="panel">
-      <h2>Vagas recentes</h2>
+      <h2>Vagas Recentes</h2>
       {% if data.recent_jobs %}
-      <ul>
+      <div class="job-list">
         {% for job in data.recent_jobs %}
-        <li>{{ job.title }} - {{ job.company }} - {{ job.source_name }} - notificado: {{ job.notified }}</li>
+        <div class="job-card">
+          <div class="job-title">{{ job.title }}</div>
+          <div class="job-details">
+            <strong>{{ job.company }}</strong> | {{ job.location }}<br>
+            <span class="profile-tag">{{ job.source_name }}</span>
+            {% if job.notified %}
+            <span class="profile-tag" style="background: #d4edda; color: #155724;">Notificado</span>
+            {% endif %}
+          </div>
+          <a href="{{ job.url }}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: bold;">Ver Vaga →</a>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
       {% else %}
-      <p>Nenhuma vaga recente.</p>
+      <p>Nenhuma vaga recente encontrada.</p>
       {% endif %}
     </section>
   </main>

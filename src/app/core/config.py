@@ -5,6 +5,7 @@ from pydantic import EmailStr, TypeAdapter, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.services.settings_store import DEFAULT_FILE_SETTINGS, FileSettingsStore
+from app.core.profile import JobProfile, build_initial_profiles
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     search_interval_minutes: int = 180
     immediate_alert_min_score: float = DEFAULT_FILE_SETTINGS["immediate_alert_min_score"]
     digest_min_score: float = 0.6
+    profiles: list[JobProfile] = build_initial_profiles()
     target_locations: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["target_locations"])
     required_keywords: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["required_keywords"])
     preferred_keywords: tuple[str, ...] = tuple(DEFAULT_FILE_SETTINGS["preferred_keywords"])

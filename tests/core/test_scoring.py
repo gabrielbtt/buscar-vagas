@@ -1,10 +1,10 @@
-from app.core.profile import build_default_profile
+from app.core.profile import build_initial_profiles
 from app.core.scoring import score_job
 from app.schemas.job import NormalizedJob
 
 
 def test_scores_industrial_automation_job_higher():
-    profile = build_default_profile()
+    profile = build_initial_profiles()[0]
     job = NormalizedJob(
         source_name="company",
         title="Estagio em Automacao Industrial com CLP e IHM",
